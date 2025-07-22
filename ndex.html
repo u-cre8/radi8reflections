@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirror Reflections</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for League Spartan and Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom font classes */
+        .font-league-spartan { font-family: 'League Spartan', sans-serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+
+        /* General body font */
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Custom scrollbar for LLM response box (no longer directly used but kept for consistency) */
+        .llm-response-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .llm-response-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .llm-response-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .llm-response-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Breathing animation styles */
+        .breathing-circle {
+            width: 180px; /* Slightly larger for better visibility */
+            height: 180px;
+            background: transparent;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column; /* Stack text and timer vertically */
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            /* Refined box-shadow for a softer glow */
+            box-shadow: 0 0 25px rgba(180, 0, 255, 0.7), 0 0 10px rgba(147, 112, 219, 0.4); /* More vibrant purple purple glow */
+            border: 4px solid #B400FF; /* Thicker, glowing border, more vibrant purple */
+            animation: breathe 19s infinite ease-in-out; /* 4+7+8 = 19s cycle for 4-7-8 technique */
+        }
+
+        @keyframes breathe {
+            0% { transform: scale(1); opacity: 1; border-color: #B400FF; } /* Start Inhale */
+            /* Inhale (4s) */
+            21.05% { transform: scale(1.15); opacity: 0.9; border-color: #9370DB; } /* End Inhale (4/19 * 100%) */
+            /* Hold (7s) */
+            57.89% { transform: scale(1.15); opacity: 0.9; border-color: #9370DB; } /* End Hold ((4+7)/19 * 100%) */
+            /* Exhale (8s) */
+            100% { transform: scale(1); opacity: 1; border-color: #B400FF; } /* End Exhale (19/19 * 100%) */
+        }
+
+        .breathing-text {
+            font-size: 1.1rem; /* Smaller font size */
+            font-weight: 500; /* Medium weight for Inter, professional look */
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.4); /* Slightly stronger text shadow for contrast */
+            font-family: 'Inter', sans-serif; /* Inter font */
+        }
+        /* Removed .breathing-timer styles */
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#E6E6FA] to-[#ADD8E6] p-4 text-gray-800">
+
+    <!-- Main Title -->
+    <h1 class="relative text-4xl md:text-5xl font-league-spartan font-extrabold text-[#36006D] mb-10 drop-shadow-lg py-6">
+        <span class="absolute -top-6 -left-6 text-[#36006D] text-xl">★</span>
+        <span class="absolute -top-6 -right-6 text-[#36006D] text-xl">★</span>
+        <span class="absolute -bottom-6 -left-6 text-[#36006D] text-xl">★</span>
+        <span class="absolute -bottom-6 -right-6 text-[#36006D] text-xl">★</span>
+        mirror reflections specially for you!
+    </h1>
+
+    <!-- Page 1: Home / Daily Reflection & Emotion Input -->
+    <div id="home-page" class="bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full text-center transform transition-all duration-300 ease-in-out hover:scale-105">
+        <p id="reflection-text-home" class="text-2xl md:text-3xl font-semibold text-gray-700 mb-8 leading-relaxed">Loading your daily reflection...</p>
+        <p id="mission-text-home" class="text-lg md:text-xl text-[#4B0082] font-medium italic mb-8"></p>
+        <!-- Removed "Another one!" button div -->
+
+        <!-- Emotion Input Section -->
+        <div class="mt-8 w-full">
+            <label for="emotion-input" class="block text-lg font-medium text-gray-700 mb-2">How are you feeling today?</label>
+            <textarea id="emotion-input" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6A5ACD] focus:border-transparent transition-all duration-200 resize-y" placeholder="e.g., anxious, joyful, tired, hopeful..."></textarea>
+            <button id="get-affirmation-btn" class="mt-4 px-6 py-3 rounded-full text-white font-bold text-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg bg-gradient-to-r from-[#FFD700] to-[#FFA500] hover:from-[#FFA500] hover:to-[#FFD700] w-full">
+                Affirm Me!
+            </button>
+        </div>
+        <!-- Removed Reset Skipped Categories button and container -->
+    </div>
+
+    <!-- Page 2: Affirmation Display -->
+    <div id="affirmation-page" class="bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full text-center transform transition-all duration-300 ease-in-out hover:scale-105 hidden">
+        <p class="text-xl md:text-2xl font-semibold text-gray-600 mb-4">Your personalized reflection:</p>
+        <p id="reflection-text-affirmation" class="text-2xl md:text-3xl font-semibold text-gray-700 mb-8 leading-relaxed"></p>
+        <p id="mission-text-affirmation" class="text-lg md:text-xl text-[#4B0082] font-medium italic mb-8"></p>
+        <div class="flex justify-center mt-6">
+            <button id="another-affirmation-btn" class="px-6 py-3 rounded-full text-white font-bold text-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg bg-gradient-to-r from-[#FFD700] to-[#FFA500] hover:from-[#FFA500] hover:to-[#FFD700]">
+                Another Affirmation!
+            </button>
+            <button id="go-back-btn" class="px-6 py-3 rounded-full text-white font-bold text-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg bg-gradient-to-r from-[#87CEEB] to-[#9370DB] hover:from-[#9370DB] hover:to-[#87CEEB] ml-8">
+                Go Back
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center z-40">
+        <div class="breathing-circle" id="breathing-circle">
+            <span class="breathing-text" id="breathing-instruction">Breathe In</span>
+            <!-- Removed breathing-timer span -->
+        </div>
+        <div id="loading-content" class="mt-4 text-xl text-white text-center">
+            <p id="loading-spinner-message">Preparing your daily reflection...</p>
+            <p id="previous-day-info" class="text-base text-gray-300 mt-2 whitespace-pre-wrap hidden"></p>
+            <p id="humorous-mission-checkin" class="text-base text-gray-400 italic mt-1 hidden"></p>
+        </div>
+    </div>
+
+    <!-- Custom Message Box for general messages -->
+    <div id="message-box" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center max-w-sm w-full">
+            <p id="message-box-text" class="text-xl font-semibold text-gray-700"></p>
+            <div class="flex justify-center mt-6">
+                <button id="message-box-ok-btn" class="mt-6 px-6 py-3 bg-[#36006D] text-white rounded-full font-bold hover:bg-[#2F0052] transition-colors">
+                    OK
+                </button>
+                <!-- Removed Yes/No buttons for reset confirmation -->
+            </div>
+        </div>
+    </div>
+
+    <!-- User ID Display -->
+    <div id="user-id-display" class="absolute bottom-4 left-4 text-sm text-gray-500 opacity-70 hidden">
+        User ID: <span id="user-id-text"></span>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, arrayUnion, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // IMPORTANT: Replace the values below with your ACTUAL Firebase project configuration.
+        // You get this from your Firebase Console -> Project settings -> Your apps -> Web app config.
+        const firebaseConfig = {
+            apiKey: "AIzaSyAt19w-z1_ml_BwxnBqLQUZVoPuqgo4Dk0",
+            authDomain: "radi8-7477b.firebaseapp.com",
+            projectId: "radi8-7477b",
+            storageBucket: "radi8-7477b.firebasestorage.app",
+            messagingSenderId: "538428939289",
+            appId: "1:538428939289:web:aa58aed34d9b507e531e88",
+            measurementId: "G-ETECDJKN78" // This one is optional
+        };
+
+        // This appId is used for Firestore collection paths (e.g., /artifacts/{appId}/...).
+        // It should match your Firebase project's appId or be a unique identifier for your app.
+        const appId = firebaseConfig.appId; // Using the appId from your Firebase config
+        const initialAuthToken = null; // Keep this null for anonymous sign-in on GitHub Pages
+
+        let db;
+        let auth;
+        let userId = null;
+        // currentQuote will hold the quote currently shown on the main card (either daily or LLM-generated)
+        let currentQuote = null;
+        let isAuthReady = false;
+        let hasInitialQuotesLoaded = false;
+        let currentPage = 'home'; // 'home' or 'affirmation'
+        let breathingPhaseTimeout = null; // To store the timeout ID for breathing exercise phases
+        let loadingScreenTimeout = null; // To store the timeout ID for the overall loading screen duration
+
+        // User data structure
+        let userData = {
+            skippedCategories: [],
+            lastDailyRefresh: null,
+            // dailySetQuotes will always hold the 3 pre-defined quotes for the day
+            dailySetQuotes: [],
+            currentDailySetQuoteIndex: 0, // Index for dailySetQuotes
+            lastEmotion: null, // Stores the last emotion entered by the user
+            lastEmotionAffirmation: null, // Stores the last LLM-generated affirmation
+            lastEmotionMission: null, // Stores the last LLM-generated mission
+        };
+
+        // Ref to store all available quotes from Firestore (pre-defined ones)
+        let allQuotes = [];
+
+        // DOM Elements
+        const homePageEl = document.getElementById('home-page');
+        const affirmationPageEl = document.getElementById('affirmation-page');
+
+        const reflectionTextHomeEl = document.getElementById('reflection-text-home');
+        const missionTextHomeEl = document.getElementById('mission-text-home');
+        // const nextReflectionBtn = document.getElementById('next-reflection-btn'); // Removed this button
+
+        const emotionInputEl = document.getElementById('emotion-input');
+        const getAffirmationBtn = document.getElementById('get-affirmation-btn');
+
+        const reflectionTextAffirmationEl = document.getElementById('reflection-text-affirmation');
+        const missionTextAffirmationEl = document.getElementById('mission-text-affirmation');
+        const anotherAffirmationBtn = document.getElementById('another-affirmation-btn');
+        const goBackBtn = document.getElementById('go-back-btn');
+
+        const loadingSpinnerEl = document.getElementById('loading-spinner');
+        const loadingSpinnerMessageEl = document.getElementById('loading-spinner-message');
+        const previousDayInfoEl = document.getElementById('previous-day-info');
+        const humorousMissionCheckinEl = document.getElementById('humorous-mission-checkin');
+        const userIdDisplayEl = document.getElementById('user-id-display');
+        const userIdTextEl = document.getElementById('user-id-text');
+
+        // Breathing exercise elements
+        const breathingCircleEl = document.getElementById('breathing-circle');
+        const breathingInstructionEl = document.getElementById('breathing-instruction');
+
+        // Message Box Elements
+        const messageBox = document.getElementById('message-box');
+        const messageBoxText = document.getElementById('message-box-text');
+        const messageBoxOkBtn = document.getElementById('message-box-ok-btn');
+
+        // Global loading flag to control button states
+        let globalLoading = true;
+
+        // Function to render the correct page and its content
+        function renderPage() {
+            // Hide both pages initially
+            homePageEl.classList.add('hidden');
+            affirmationPageEl.classList.add('hidden');
+
+            if (currentPage === 'home') {
+                homePageEl.classList.remove('hidden');
+                if (currentQuote) {
+                    reflectionTextHomeEl.textContent = `"${currentQuote.text}"`;
+                    missionTextHomeEl.textContent = ""; // Daily reflections don't have missions
+                } else {
+                    reflectionTextHomeEl.textContent = "No reflections available for today. Try entering an emotion!";
+                    missionTextHomeEl.textContent = "";
+                }
+            } else if (currentPage === 'affirmation') {
+                affirmationPageEl.classList.remove('hidden');
+                if (userData.lastEmotionAffirmation && userData.lastEmotionMission) {
+                    reflectionTextAffirmationEl.textContent = `"${userData.lastEmotionAffirmation}"`;
+                    missionTextAffirmationEl.textContent = `Mission for the day: ${userData.lastEmotionMission}`;
+                } else {
+                    reflectionTextAffirmationEl.textContent = "No affirmation available. Please go back and enter an emotion.";
+                    missionTextAffirmationEl.textContent = "";
+                }
+            }
+        }
+
+        // Function to start the breathing exercise animation (4-7-8 technique)
+        // This function will now loop indefinitely until stopBreathingExercise is called.
+        function startBreathingExercise() {
+            console.log("Starting breathing exercise for continuous loop...");
+            breathingCircleEl.classList.remove('hidden'); // Show the circle
+            breathingCircleEl.style.animationPlayState = 'running';
+
+            const phases = [
+                { instruction: "Breathe In", duration: 4000 }, // 4 seconds inhale
+                { instruction: "Hold", duration: 7000 },      // 7 seconds hold
+                { instruction: "Breathe Out", duration: 8000 }    // 8 seconds exhale
+            ];
+            let currentPhaseIndex = 0;
+
+            const runBreathingPhase = () => {
+                const phase = phases[currentPhaseIndex];
+                breathingInstructionEl.textContent = phase.instruction;
+                console.log(`Breathing phase: ${phase.instruction}, next in ${phase.duration / 1000}s`);
+
+                // Clear any existing phase timeout before setting a new one
+                if (breathingPhaseTimeout) clearTimeout(breathingPhaseTimeout);
+
+                breathingPhaseTimeout = setTimeout(() => {
+                    currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
+                    runBreathingPhase(); // Loop to the next phase indefinitely
+                }, phase.duration);
+            };
+
+            // Start the first phase of the breathing cycle
+            runBreathingPhase();
+        }
+
+        // Function to stop the breathing exercise animation
+        function stopBreathingExercise() {
+            if (breathingPhaseTimeout) {
+                clearTimeout(breathingPhaseTimeout);
+                breathingPhaseTimeout = null;
+            }
+            breathingCircleEl.style.animationPlayState = 'paused';
+            breathingInstructionEl.textContent = ""; // Clear instruction
+            breathingCircleEl.classList.add('hidden'); // Hide the circle
+        }
+
+        // Function to manage loading spinner visibility and styling
+        function setLoadingSpinnerVisibility(isVisible, message = "Preparing...", showBreathingExercise = false) {
+            loadingSpinnerMessageEl.textContent = message;
+
+            // Clear any existing overall loading screen timeout
+            if (loadingScreenTimeout) {
+                clearTimeout(loadingScreenTimeout);
+                loadingScreenTimeout = null;
+            }
+
+            if (isVisible) {
+                loadingSpinnerEl.classList.remove('hidden');
+                // Remove existing background classes
+                loadingSpinnerEl.classList.remove('bg-gray-900', 'bg-gradient-to-br', 'from-[#E6E6FA]', 'to-[#ADD8E6]');
+
+                if (showBreathingExercise) {
+                    loadingSpinnerEl.classList.add('bg-gray-900'); // Dark background for breathing
+                    loadingSpinnerMessageEl.classList.add('text-white'); // White text for dark background
+                    previousDayInfoEl.classList.add('text-gray-300');
+                    humorousMissionCheckinEl.classList.add('text-gray-400');
+                    breathingCircleEl.classList.remove('hidden'); // Explicitly show breathing circle
+
+                    // Start breathing exercise, which will now loop its text changes indefinitely
+                    startBreathingExercise();
+
+                    // Set a timeout to hide the spinner and stop breathing after one full cycle (19 seconds)
+                    // This ensures the user sees at least one full 4-7-8 cycle before content appears.
+                    loadingScreenTimeout = setTimeout(() => {
+                        loadingSpinnerEl.classList.add('hidden');
+                        stopBreathingExercise(); // Stop the text changing loop
+                        globalLoading = false; // Set global loading flag to false
+                        updateButtonStates(); // Update button states
+                    }, 19000); // 4s (Inhale) + 7s (Hold) + 8s (Exhale) = 19 seconds for one full cycle
+
+                } else {
+                    // Non-breathing loading state
+                    loadingSpinnerEl.classList.add('bg-gradient-to-br', 'from-[#E6E6FA]', 'to-[#ADD8E6]'); // Light background
+                    loadingSpinnerMessageEl.classList.remove('text-white');
+                    loadingSpinnerMessageEl.classList.add('text-[#36006D]');
+                    previousDayInfoEl.classList.remove('text-gray-300');
+                    previousDayInfoEl.classList.add('text-gray-700');
+                    humorousMissionCheckinEl.classList.remove('text-gray-400');
+                    humorousMissionCheckinEl.classList.add('text-gray-600');
+                    breathingCircleEl.classList.add('hidden'); // Hide breathing circle
+                    stopBreathingExercise(); // Ensure breathing is stopped
+
+                    // For non-breathing loading, hide immediately after setting message
+                    loadingSpinnerEl.classList.add('hidden');
+                    globalLoading = false;
+                    updateButtonStates();
+                }
+            } else {
+                // If setLoadingSpinnerVisibility(false) is called directly
+                loadingSpinnerEl.classList.add('hidden');
+                stopBreathingExercise(); // Always stop breathing when loading is done
+                previousDayInfoEl.classList.add('hidden');
+                humorousMissionCheckinEl.classList.add('hidden');
+                globalLoading = false;
+                updateButtonStates();
+            }
+        }
+
+        // Function to update button disabled states based on globalLoading
+        function updateButtonStates() {
+            // nextReflectionBtn.disabled = globalLoading; // Removed this button
+            getAffirmationBtn.disabled = globalLoading;
+            anotherAffirmationBtn.disabled = globalLoading;
+            goBackBtn.disabled = globalLoading;
+            emotionInputEl.disabled = globalLoading;
+        }
+
+        // Function to display messages in a custom message box
+        function showMessage(msg) {
+            messageBoxText.textContent = msg;
+            messageBox.classList.remove('hidden');
+            messageBoxOkBtn.classList.remove('hidden');
+        }
+
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        // Helper to get current Malaysian date (GMT+8)
+        const getMalaysianDate = () => {
+            const now = new Date();
+            const malaysiaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+            malaysiaTime.setHours(0, 0, 0, 0); // Set to midnight for date comparison
+            return malaysiaTime;
+        };
+
+        // Initial set of diverse quotes and missions with categories (moved here for clarity)
+        const initialQuotes = [
+            { text: "No one sees your flaws like you do. In this moment, choose to see your undeniable beauty.", mission: "", category: "appearance-confidence" },
+            { text: "Smile at your reflection today. You are radiant, capable, and truly gorgeous!", mission: "", category: "appearance-confidence" },
+            { text: "Your worth is not measured by your appearance. You are valuable, loved, and enough, just as you are.", mission: "", category: "appearance-confidence" },
+            { text: "Look closely. Beyond what you might critique, there's a unique sparkle in your eyes, a strength in your posture.", mission: "", category: "appearance-confidence" },
+            { text: "Before you step out, remember that confidence is your best outfit. Wear it proudly, it suits you beautifully.", mission: "", category: "appearance-confidence" },
+            { text: "Your true beauty radiates from within – it's in your kindness, your spirit, your unique laughter. Let that shine brightest.", mission: "", category: "appearance-confidence" },
+            { text: "Every part of you tells a story. Embrace your narrative, for it is beautiful and uniquely yours.", mission: "", category: "appearance-confidence" },
+            { text: "The most captivating thing about you is your authentic self. Don't hide it; let it glow.", mission: "", category: "appearance-confidence" },
+            { text: "You are a masterpiece, constantly evolving. Appreciate the journey and the beautiful person you are becoming.", mission: "", category: "appearance-confidence" },
+            { text: "Today, you are stepping out as a confident and capable individual. Let that inner knowing empower your day.", mission: "", category: "appearance-confidence" },
+            { text: "You are capable of profound change. Begin now.", mission: "", category: "change" },
+            { text: "Breathe in self-acceptance, breathe out self-doubt. You are perfectly imperfect, and that is your magic.", mission: "", category: "appearance-confidence" },
+            { text: "Your body is strong and carries you through life. Thank it for all it does, and treat it with love.", mission: "", category: "appearance-confidence" },
+            { text: "Let your inner light illuminate your outer glow. You are truly radiant.", mission: "", category: "appearance-confidence" },
+            { text: "Before you walk out, remember that your unique style is an expression of your beautiful soul. Own it!", mission: "", category: "appearance-confidence" },
+            { text: "You are deserving of all the good things life has to offer. Your appearance does not dictate your worth.", mission: "", category: "appearance-confidence" },
+            { text: "Look at the kindness in your eyes, the strength in your hands. These are the beautiful truths of your being.", mission: "", category: "appearance-confidence" },
+            { text: "Today, choose to be your own biggest fan. Celebrate yourself, just as you are.", mission: "", category: "appearance-confidence" },
+            { text: "Your spirit is vibrant, your energy is magnetic. Let that positive essence lead the way today.", mission: "", category: "appearance-confidence" },
+            { text: "You are beautiful, strong, and capable. Carry that truth with you wherever you go.", mission: "", category: "appearance-confidence" },
+        ];
+
+
+        // Function to load initial daily quotes or continue with existing ones
+        async function loadInitialDailyQuote(forceNewSelection = false) {
+            console.log("loadInitialDailyQuote called. forceNewSelection:", forceNewSelection);
+            if (!db || !userId || !isAuthReady) {
+                console.error("Firestore, User ID, or Auth not initialized for initial quote loading.");
+                // Show a message if app is not ready
+                showMessage("App not fully initialized. Please ensure internet connection and refresh the page.");
+                setLoadingSpinnerVisibility(false); // Hide spinner if not ready
+                return;
+            }
+
+            globalLoading = true; // Set loading to true at the start of the operation
+            updateButtonStates(); // Disable buttons
+
+            // Only show breathing exercise on initial page load (not for "Another one!" clicks)
+            const showBreathing = !hasInitialQuotesLoaded;
+            if (showBreathing) {
+                setLoadingSpinnerVisibility(true, "Initializing application...", true);
+            } else { // Only update message if not showing breathing (which has its own message)
+                setLoadingSpinnerVisibility(true, "Preparing your daily reflection...", false);
+            }
+            previousDayInfoEl.classList.add('hidden');
+            humorousMissionCheckinEl.classList.add('hidden');
+
+            try {
+                const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/preferences`, 'daily');
+                const userDocSnap = await getDoc(userDocRef);
+                const currentUserData = userDocSnap.exists() ? userDocSnap.data() : {
+                    skippedCategories: [],
+                    lastDailyRefresh: null,
+                    dailySetQuotes: [],
+                    currentDailySetQuoteIndex: 0,
+                    lastEmotion: null,
+                    lastEmotionAffirmation: null,
+                    lastEmotionMission: null,
+                };
+                // Update the global userData object with fetched/default data
+                userData = currentUserData;
+                console.log("Current userData after fetch:", userData);
+
+                const todayMYT = getMalaysianDate();
+                const lastRefreshDate = userData.lastDailyRefresh ? userData.lastDailyRefresh.toDate() : null;
+                const lastRefreshMYT = lastRefreshDate ? new Date(lastRefreshDate.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' })) : null;
+                if (lastRefreshMYT) lastRefreshMYT.setHours(0, 0, 0, 0);
+
+                const isNewDay = !lastRefreshMYT || todayMYT.getTime() > lastRefreshMYT.getTime();
+                console.log("Is new day?", isNewDay, "Last refresh:", lastRefreshMYT ? lastRefreshMYT.toISOString() : "Never");
+
+                // Display previous day's info if available and it's a new day or forced selection
+                if ((isNewDay || forceNewSelection) && userData.dailySetQuotes && userData.dailySetQuotes.length > 0) {
+                    const previousQuote = userData.dailySetQuotes[userData.currentDailySetQuoteIndex];
+                    if (previousQuote && previousQuote.text) {
+                        previousDayInfoEl.textContent = `Yesterday's Reflection: "${previousQuote.text}"`;
+                        previousDayInfoEl.classList.remove('hidden');
+
+                        const showHumorousMessage = Math.random() < 0.3; // 30% chance
+                        if (showHumorousMessage) {
+                            const humorousMessages = [
+                                "Did you conquer your mission, or is it still plotting its escape?",
+                                "Your mission, should you choose to accept it (and you should!), is waiting!",
+                                "Don't let your mission feel lonely. It's eagerly awaiting your attention!",
+                                "Is your mission accomplished? Or are we still in 'planning' phase? 😉",
+                                "The universe is patiently waiting for you to complete your mission. No pressure! (Okay, maybe a little.)",
+                                "Just a friendly nudge: your mission isn't going to do itself. Unless it's a mission about napping. Then, carry on!",
+                                "Did you high-five your mission today, or is it still giving you the cold shoulder?",
+                                "Your mission called. It misses you. Go give it some love!",
+                                "Warning: Uncompleted missions may spontaneously transform into glitter... everywhere. You've been warned!",
+                                "Remember that awesome mission? Yeah, that one. It's still there. Staring. Patiently.",
+                            ];
+                            humorousMissionCheckinEl.textContent = humorousMessages[Math.floor(Math.random() * humorousMessages.length)];
+                            humorousMissionCheckinEl.classList.remove('hidden');
+                        }
+                    }
+                }
+
+                let quotesToPopulateDailySet = [];
+
+                if (isNewDay || forceNewSelection || userData.dailySetQuotes.length === 0) {
+                    console.log("New day/forced selection/empty dailySetQuotes. Attempting to get/populate all quotes.");
+                    // Fetch all pre-defined quotes if not already fetched or if we need to re-evaluate
+                    if (allQuotes.length === 0 || forceNewSelection) {
+                        const quotesCol = collection(db, `artifacts/${appId}/public/data`, 'quotes');
+                        const quotesSnapshot = await getDocs(quotesCol);
+                        if (quotesSnapshot.empty) {
+                            console.log("Firestore 'quotes' collection is empty. Populating initial quotes using batch write...");
+                            const batch = writeBatch(db); // Get a new write batch
+                            for (const quote of initialQuotes) {
+                                const newDocRef = doc(quotesCol); // Create a new document reference
+                                batch.set(newDocRef, { ...quote, lastShown: [] }); // Add to batch
+                            }
+                            await batch.commit(); // Commit the batch write
+                            console.log("Initial quotes populated successfully.");
+
+                            const updatedQuotesSnapshot = await getDocs(quotesCol);
+                            allQuotes = updatedQuotesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                        } else {
+                            allQuotes = quotesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                        }
+                        console.log("All quotes fetched/populated. Count:", allQuotes.length);
+                    }
+
+                    // Filter out skipped categories and recently shown quotes
+                    const availableQuotes = allQuotes.filter(quote =>
+                        !userData.skippedCategories.includes(quote.category) &&
+                        (!quote.lastShown || !quote.lastShown.some(ts => {
+                            const shownDate = ts.toDate();
+                            const twoYearsAgo = new Date();
+                            twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+                            return shownDate > twoYearsAgo;
+                        }))
+                    );
+                    console.log("Available quotes after filtering:", availableQuotes.length);
+
+                    // Randomly select up to 3 unique quotes
+                    const selectedQuoteIds = new Set();
+                    while (quotesToPopulateDailySet.length < 3 && quotesToPopulateDailySet.length < availableQuotes.length) {
+                        const randomIndex = Math.floor(Math.random() * availableQuotes.length);
+                        const selectedQuote = availableQuotes[randomIndex];
+                        if (selectedQuote && !selectedQuoteIds.has(selectedQuote.id)) {
+                            quotesToPopulateDailySet.push({
+                                id: selectedQuote.id,
+                                text: selectedQuote.text,
+                                mission: selectedQuote.mission,
+                                category: selectedQuote.category
+                            });
+                            selectedQuoteIds.add(selectedQuote.id);
+                        }
+                    }
+                    console.log("Quotes selected for daily set:", quotesToPopulateDailySet.length);
+
+                    if (quotesToPopulateDailySet.length === 0) {
+                        loadingSpinnerMessageEl.textContent = "No new reflections available based on your preferences.";
+                        currentQuote = null; // Set currentQuote to null if no daily reflections
+                        reflectionTextHomeEl.textContent = "No reflections available for today. Try entering an emotion!";
+                        missionTextHomeEl.textContent = "";
+                        console.warn("No quotes selected for daily set after filtering. Check initialQuotes or skippedCategories.");
+                        return; // Exit early if no quotes are selected
+                    }
+
+                    // Update lastShown for selected quotes in Firestore
+                    for (const quote of quotesToPopulateDailySet) {
+                        const quoteDocRef = doc(db, `artifacts/${appId}/public/data/quotes`, quote.id);
+                        await updateDoc(quoteDocRef, {
+                            lastShown: arrayUnion(new Date())
+                        });
+                    }
+
+                    // Update user data in Firestore
+                    await setDoc(userDocRef, {
+                        ...userData,
+                        lastDailyRefresh: todayMYT,
+                        dailySetQuotes: quotesToPopulateDailySet,
+                        currentDailySetQuoteIndex: 0, // Always start from the first quote for a new day/selection
+                        lastEmotion: null, // Clear LLM data when new daily quotes are set
+                        lastEmotionAffirmation: null,
+                        lastEmotionMission: null,
+                    }, { merge: true });
+
+                    // Update the local userData object after Firestore write
+                    userData = {
+                        ...userData,
+                        lastDailyRefresh: todayMYT,
+                        dailySetQuotes: quotesToPopulateDailySet,
+                        currentDailySetQuoteIndex: 0,
+                        lastEmotion: null,
+                        lastEmotionAffirmation: null,
+                        lastEmotionMission: null,
+                    };
+                    currentQuote = quotesToPopulateDailySet[0]; // Set currentQuote for display
+                    currentPage = 'home'; // Explicitly set page to home
+                    console.log("New daily quotes set and displayed:", currentQuote.text);
+
+                } else {
+                    // It's the same day, continue with existing daily quotes or previous affirmation
+                    if (userData.dailySetQuotes && userData.dailySetQuotes.length > 0) {
+                        currentQuote = userData.dailySetQuotes[userData.currentDailySetQuoteIndex];
+                        currentPage = 'home';
+                        console.log("Continuing with existing daily quote:", currentQuote.text);
+                    } else if (userData.lastEmotionAffirmation && userData.lastEmotionMission) {
+                        // If no daily quotes but there's a previous affirmation, show that
+                        currentQuote = {
+                            text: userData.lastEmotionAffirmation,
+                            mission: userData.lastEmotionMission,
+                            category: 'emotion-based',
+                            id: `llm-${Date.now()}` // Dummy ID for LLM-generated
+                        };
+                        currentPage = 'affirmation';
+                        console.log("No daily quotes, showing previous affirmation:", currentQuote.text);
+                    } else {
+                        // Fallback if no daily quotes and no previous affirmation
+                        loadingSpinnerMessageEl.textContent = "No reflections available. Please try entering an emotion!";
+                        currentQuote = null;
+                        reflectionTextHomeEl.textContent = "No reflections available. Please try entering an emotion!";
+                        missionTextHomeEl.textContent = "";
+                        console.warn("No daily quotes or previous affirmation found.");
+                        return;
+                    }
+                }
+
+                if (currentQuote) {
+                    if (currentPage === 'home') {
+                        loadingSpinnerMessageEl.textContent = "Your daily reflection is ready!";
+                    } else if (currentPage === 'affirmation' && userData.lastEmotionMission) {
+                        loadingSpinnerMessageEl.textContent = `Mission for today: ${userData.lastEmotionMission}`;
+                    }
+                } else {
+                    loadingSpinnerMessageEl.textContent = "No reflections available for today.";
+                }
+
+            } catch (error) {
+                console.error("Error loading initial content:", error);
+                showMessage("Failed to load reflections. Please try again later. Ensure Firestore rules allow read/write to public data. Error: " + error.message);
+                reflectionTextHomeEl.textContent = "Failed to load reflections. Please try again later.";
+                missionTextHomeEl.textContent = "";
+            } finally {
+                setLoadingSpinnerVisibility(false); // Hide spinner and update globalLoading
+                renderPage(); // Always render the page after loading
+                hasInitialQuotesLoaded = true; // Mark that initial quotes have been loaded
+            }
+        }
+
+        // Function to generate affirmation based on emotion using LLM
+        async function generateAffirmation(emotion) {
+            console.log("generateAffirmation called with emotion:", emotion);
+            if (!db || !userId || !isAuthReady) {
+                console.error("Firestore, User ID, or Auth not initialized for affirmation generation.");
+                showMessage("App not ready. Please refresh or check console for errors.");
+                return;
+            }
+            if (!emotion.trim()) {
+                showMessage("Please enter how you are feeling to get an affirmation!");
+                return;
+            }
+
+            globalLoading = true; // Set loading to true at the start of the operation
+            updateButtonStates(); // Disable buttons
+
+            setLoadingSpinnerVisibility(true, `Preparing your personalized affirmation just for you...`, false); // DO NOT show breathing exercise
+            previousDayInfoEl.classList.add('hidden');
+            humorousMissionCheckinEl.classList.add('hidden');
+
+            try {
+                // Modified prompt to encourage more unique responses
+                const prompt = `Generate a positive affirmation and a small, actionable mission for someone who is feeling ${emotion}. The affirmation should be concise and empowering. The mission should be a single, clear action. Provide a fresh and unique perspective. Format the response as a JSON object with two keys: "affirmation" (string) and "mission" (string). Example: {"affirmation": "You are strong.", "mission": "Take a deep breath."}`;
+
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "affirmation": { "type": "STRING" },
+                                "mission": { "type": "STRING" }
+                            },
+                            "propertyOrdering": ["affirmation", "mission"]
+                        }
+                    }
+                };
+
+                // IMPORTANT: Your Gemini API Key is inserted here.
+                const apiKey = "AIzaSyDIuGDtfaQmqN8Rq5eI40CfejDC-CIfOR8"; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                console.log("Gemini API response:", result);
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const jsonString = result.candidates[0].content.parts[0].text;
+                    try {
+                        const parsedJson = JSON.parse(jsonString);
+
+                        if (parsedJson.affirmation && parsedJson.mission) {
+                            userData.lastEmotionAffirmation = parsedJson.affirmation;
+                            userData.lastEmotionMission = parsedJson.mission;
+                            userData.lastEmotion = emotion; // Store the emotion
+                            currentPage = 'affirmation'; // Set page mode to affirmation
+
+                            // Set currentQuote to the LLM-generated affirmation for consistent display
+                            currentQuote = {
+                                text: parsedJson.affirmation,
+                                mission: parsedJson.mission,
+                                category: 'emotion-based',
+                                id: `llm-${Date.now()}`
+                            };
+                            console.log("Affirmation generated and set:", currentQuote.text);
+
+                            const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/preferences`, 'daily');
+                            await setDoc(userDocRef, {
+                                lastEmotionAffirmation: userData.lastEmotionAffirmation,
+                                lastEmotionMission: userData.lastEmotionMission,
+                                lastEmotion: userData.lastEmotion
+                            }, { merge: true });
+
+                            // Content will be updated by renderPage using userData.lastEmotionAffirmation
+                        } else {
+                            console.error("LLM response missing affirmation or mission:", parsedJson);
+                            showMessage("Could not generate a meaningful affirmation. Please try rephrasing your emotion.");
+                            // Keep current page as is, or revert to home if no valid affirmation
+                            if (!currentQuote) currentPage = 'home'; // Fallback
+                        }
+                    } catch (parseError) {
+                        console.error("JSON parse error for LLM response:", parseError, "Raw LLM response:", jsonString);
+                        showMessage("Failed to parse AI response. Please try again.");
+                        if (!currentQuote) currentPage = 'home'; // Fallback
+                    }
+                } else {
+                    console.error("LLM response structure unexpected:", result);
+                    showMessage("Failed to get a response from the AI. Please try again.");
+                    if (!currentQuote) currentPage = 'home'; // Fallback
+                }
+            } catch (error) {
+                console.error("Error calling LLM or parsing response:", error);
+                showMessage("An error occurred while generating your affirmation. Please try again later. Error: " + error.message);
+                if (!currentQuote) currentPage = 'home'; // Fallback
+            } finally {
+                setLoadingSpinnerVisibility(false); // Hide spinner and update globalLoading
+                renderPage(); // Render the appropriate page
+            }
+        }
+
+        // Handle "Next" button click (for daily quotes) - This function is now effectively removed from UI
+        async function handleNextQuote() {
+            console.log("handleNextQuote called (but button removed from UI).");
+            // This function will still be called internally if the current daily set runs out.
+            if (!db || !userId || !isAuthReady) {
+                console.error("Firestore, User ID, or Auth not initialized for next quote.");
+                showMessage("App not ready. Please refresh or check console for errors.");
+                return;
+            }
+
+            globalLoading = true; // Set loading to true at the start of the operation
+            updateButtonStates(); // Disable buttons
+
+            setLoadingSpinnerVisibility(true, "Loading your daily reflection...", false); // DO NOT show breathing exercise
+            previousDayInfoEl.classList.add('hidden');
+            humorousMissionCheckinEl.classList.add('hidden');
+
+            try {
+                const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/preferences`, 'daily');
+                const nextIndex = userData.currentDailySetQuoteIndex + 1;
+                console.log("Current index:", userData.currentDailySetQuoteIndex, "Next index:", nextIndex, "Daily quotes length:", userData.dailySetQuotes.length);
+
+                if (userData.dailySetQuotes && nextIndex < userData.dailySetQuotes.length) {
+                    await updateDoc(userDocRef, {
+                        currentDailySetQuoteIndex: nextIndex,
+                        lastEmotion: null, // Clear LLM data when cycling daily quotes
+                        lastEmotionAffirmation: null,
+                        lastEmotionMission: null
+                    });
+                    userData.currentDailySetQuoteIndex = nextIndex;
+                    userData.lastEmotion = null;
+                    userData.lastEmotionAffirmation = null;
+                    userData.lastEmotionMission = null;
+                    currentQuote = userData.dailySetQuotes[nextIndex]; // Update currentQuote
+                    currentPage = 'home'; // Ensure we are on the home page
+                    loadingSpinnerMessageEl.textContent = "Loading your daily reflection...";
+                    console.log("Moved to next daily quote:", currentQuote.text);
+
+                } else {
+                    // If no more daily set quotes, try to load a new set
+                    console.log("No more daily quotes in current set. Attempting to load new set.");
+                    await loadInitialDailyQuote(true); // Force a new selection of daily quotes
+                }
+
+            } catch (error) {
+                console.error("Error moving to next quote:", error);
+                showMessage("Failed to load next reflection. Please try again. Error: " + error.message);
+            } finally {
+                setLoadingSpinnerVisibility(false); // Hide spinner and update globalLoading
+                renderPage(); // Ensure correct page is rendered
+            }
+        }
+
+        // Event Listeners
+        // nextReflectionBtn.addEventListener('click', handleNextQuote); // Removed event listener for the button
+        getAffirmationBtn.addEventListener('click', () => generateAffirmation(emotionInputEl.value));
+        anotherAffirmationBtn.addEventListener('click', () => {
+            if (userData.lastEmotion) {
+                generateAffirmation(userData.lastEmotion);
+            } else {
+                showMessage("Please go back and enter an emotion first!");
+            }
+        });
+        goBackBtn.addEventListener('click', () => {
+            console.log("Go Back button clicked.");
+            currentPage = 'home';
+            // When going back, set currentQuote to the last daily quote shown, if any
+            if (userData.dailySetQuotes && userData.dailySetQuotes.length > 0 && userData.currentDailySetQuoteIndex < userData.dailySetQuotes.length) {
+                currentQuote = userData.dailySetQuotes[userData.currentDailySetQuoteIndex];
+                console.log("Going back to daily quote:", currentQuote.text);
+            } else {
+                currentQuote = null; // No daily quote to go back to
+                console.log("Going back to home, but no daily quote available.");
+            }
+            renderPage(); // Render home page with current dailySetQuotes
+        });
+        messageBoxOkBtn.addEventListener('click', hideMessage);
+
+
+        // Firebase Initialization and Auth
+        window.onload = async function() {
+            // Start showing the loading spinner with breathing exercise immediately
+            setLoadingSpinnerVisibility(true, "Initializing application...", true);
+
+            console.log("Firebase Config:", firebaseConfig); // Log the config for debugging
+
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    console.log("Authenticated as:", userId);
+                    isAuthReady = true;
+                    userIdTextEl.textContent = userId;
+                    userIdDisplayEl.classList.remove('hidden');
+
+                    // Load initial app content (daily quotes)
+                    // This function will handle setting loading to false in its finally block
+                    await loadInitialDailyQuote();
+                    // hasInitialQuotesLoaded is set inside loadInitialDailyQuote's finally block now.
+
+                    // Setup daily refresh timer
+                    setupDailyRefresh();
+
+                } else {
+                    // Try to sign in anonymously if no initial auth token
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                        // If sign-in is successful, onAuthStateChanged will trigger again with a user,
+                        // leading to the 'if (user)' block above.
+                    } catch (error) {
+                        console.error("Firebase authentication error:", error);
+                        showMessage(
+                            "Authentication failed. Please check the following in your Firebase project console:\n\n" +
+                            "1. Go to 'Authentication' -> 'Sign-in method' and ensure 'Anonymous' is enabled.\n" +
+                            "2. Go to 'Authentication' -> 'Settings' -> 'Authorized domains' and ensure your GitHub Pages domain (e.g., yourusername.github.io) is added.\n" +
+                            "3. Verify that the Firebase configuration (apiKey, authDomain, etc.) in your code matches your project's settings exactly.\n\n" +
+                            "Error details: " + error.message
+                        );
+                        isAuthReady = false;
+                        // If auth fails here, loadInitialDailyQuote won't be called, so we must hide the spinner here.
+                        setLoadingSpinnerVisibility(false);
+                    }
+                }
+            });
+        };
+
+        // Daily refresh timer setup
+        function setupDailyRefresh() {
+            const now = new Date();
+            const malaysiaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+            const tomorrowMYT = new Date(malaysiaTime);
+            tomorrowMYT.setDate(malaysiaTime.getDate() + 1);
+            tomorrowMYT.setHours(0, 0, 0, 0);
+
+            const timeToRefresh = tomorrowMYT.getTime() - malaysiaTime.getTime();
+
+            console.log(`Next refresh in: ${timeToRefresh / 1000 / 60 / 60} hours`);
+
+            setTimeout(() => {
+                console.log("Daily refresh triggered!");
+                loadInitialDailyQuote(); // Refresh with new daily quotes
+                setupDailyRefresh(); // Set up timer for the next day
+            }, timeToRefresh);
+        }
+    </script>
+</body>
+</html>
